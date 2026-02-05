@@ -267,6 +267,12 @@ class Config:
     LORA_DROPOUT = 0.1
     LORA_TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
     
+    # ==================== GOOGLE DRIVE FILE IDS ====================
+    GDRIVE_FILES = {
+        "problem.json": "1rlx7uXA9E9zpuifciDKHZRlzCBYAcreY",
+        "student-problem-coarse-flattened.json": "1zbROVDxXBNtAAm5rB0UqEn6MvX91Jyuy"
+    }
+    
     # ==================== FILE PATHS ====================
     DATA_DIR = "dataset/MOOCRadar"
     PROBLEM_JSON = f"{DATA_DIR}/problem.json"
