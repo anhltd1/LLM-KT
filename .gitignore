@@ -4,8 +4,6 @@
 
 # Environment variables - NEVER COMMIT API KEYS!
 .env
-.env.local
-.env.*.local
 
 # Dataset folders - DO NOT COMMIT
 dataset/
