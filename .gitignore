@@ -4,17 +4,58 @@
 
 # Environment variables - NEVER COMMIT API KEYS!
 .env
+.env.local
+.env.*.local
 
-# Dataset folders - DO NOT COMMIT
+# ----------------------------------------------------------------------------
+# DATASETS & DATA
+# ----------------------------------------------------------------------------
 dataset/
 data/
-*.csv
-*.json
-*.txt
-!requirements.txt
-!README.txt
+processed/
+mappings/
 
-# Python
+# Ignore large data files anywhere
+*.csv
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.h5
+*.hdf5
+*.model
+*.onnx
+
+# Ignore JSON files ONLY in data directories (allow config json in root)
+dataset/**/*.json
+processed/**/*.json
+outputs/**/*.json
+checkpoints/**/*.json
+# But don't ignore all json files globally (e.g. valid config/metadata)
+
+# ----------------------------------------------------------------------------
+# TRAINING ARTIFACTS
+# ----------------------------------------------------------------------------
+checkpoints/
+logs/
+outputs/
+embeddings/
+wandb/
+.wandb/
+assets/training_*.png
+
+# ----------------------------------------------------------------------------
+# PYTHON / SYSTEM
+# ----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -41,46 +82,19 @@ MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
-env.bak/
-venv.bak/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-*.ipynb_checkpoints
-
-# PyCharm
+# IDEs
 .idea/
-
-# VS Code
 .vscode/
 *.code-workspace
+.ipynb_checkpoints/
+.mypy_cache/
+.pytest_cache/
 
-# Model Checkpoints & Training Artifacts
-checkpoints/
-logs/
-outputs/
-embeddings/
-wandb/
-*.ckpt
-*.pt
-*.pth
-*.bin
-*.safetensors
-
-# Weights & Biases
-wandb/
-.wandb/
-
-# Large model files
-models/
-*.h5
-*.hdf5
-*.model
-
-# Temporary files
+# Temporary
 *.tmp
 *.temp
 *.swp
@@ -88,50 +102,11 @@ models/
 *~
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Coverage reports
+# Testing
 htmlcov/
 .tox/
 .nox/
 .coverage
 .coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# profiling data
-*.prof
-
-# Preprocessed data (if large)
-*.npy
-*.npz
-*.pkl
-*.pickle
-
-# System files
-desktop.ini
-.Spotlight-V100
-.Trashes
-
-# Archives
-*.zip
-*.tar.gz
-*.rar
-*.7z
