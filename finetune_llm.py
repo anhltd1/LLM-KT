@@ -97,7 +97,8 @@ def train_epoch(model, train_loader, optimizer, scheduler, device, epoch, grad_a
                 "train/lr": scheduler.get_last_lr()[0]
             })
             
-    return {"loss": total_loss / len(train_loader)}
+    avg_loss = total_loss / len(train_loader) if len(train_loader) > 0 else 0.0
+    return {"loss": avg_loss}
 
 def validate(model, val_loader, device, use_wandb=False):
     model.eval()
@@ -118,7 +119,10 @@ def validate(model, val_loader, device, use_wandb=False):
             # TODO: Implement proper accuracy metric for LLM next-token prediction
             # This requires inspecting the logits at the position corresponding to the answer.
             
-    return {"val_loss": total_loss / len(val_loader)}
+    if len(val_loader) > 0:
+        return {"val_loss": total_loss / len(val_loader)}
+    else:
+        return {"val_loss": 0.0}
 
 def main():
     args = parse_args()
