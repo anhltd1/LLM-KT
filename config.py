@@ -22,7 +22,23 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
+# Load environment variables from .env file
 load_dotenv()
+
+# ============================================================================
+# PROXY CONFIGURATION
+# ============================================================================
+# Automatically configure network proxies (proxy vs direct)
+try:
+    # Use direct import to avoid potential circular dependency with utils package
+    import sys
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from utils.proxy_manager import ProxyManager
+    ProxyManager.configure(verbose=True)
+except ImportError:
+    print("Warning: Could not import ProxyManager. Skipping proxy configuration.")
+except Exception as e:
+    print(f"Warning: Proxy configuration failed: {e}")
 
 
 # ============================================================================

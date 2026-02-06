@@ -24,6 +24,8 @@ from .data_loader import (
     collate_fn
 )
 
+from .proxy_manager import ProxyManager
+
 __all__ = [
     # Mapping utilities
     'ConceptMapper',
@@ -39,5 +41,8 @@ __all__ = [
     'create_data_loaders',
     'create_data_loaders_from_processed',
     'load_processed_data',
-    'collate_fn'
+    'collate_fn',
+    
+    # Network utilities
+    'ProxyManager'
 ]
