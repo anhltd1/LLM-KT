@@ -142,10 +142,19 @@ def validate(model, loader, criterion, device):
             all_preds.extend(probs.cpu().numpy())
             all_targets.extend(targets.cpu().numpy())
     
-    auc = roc_auc_score(all_targets, all_preds)
+    if len(all_targets) == 0:
+        return 0.0, 0.5, 0.0
+    
+    try:
+        auc = roc_auc_score(all_targets, all_preds)
+    except ValueError:
+        # Avoid crash if only one class is present in validation batch
+        auc = 0.5
+        
     acc = accuracy_score(all_targets, [1 if p > 0.5 else 0 for p in all_preds])
     
-    return total_loss / len(loader), auc, acc
+    avg_loss = total_loss / len(loader) if len(loader) > 0 else 0.0
+    return avg_loss, auc, acc
 
 def main():
     args = parse_args()
