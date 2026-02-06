@@ -372,13 +372,24 @@ def main():
     print(f"  Max Students:  {args.max_students or 'All'}")
     print(f"  Seed:          {args.seed}")
     
-    # Check files exist
-    if not os.path.exists(problems_path):
-        print(f"\n✗ Problem file not found: {problems_path}")
-        sys.exit(1)
+    # Check files exist, download from Google Drive if needed
+    from utils.gdrive_downloader import ensure_dataset_files
     
-    if not os.path.exists(interactions_path):
-        print(f"\n✗ Interactions file not found: {interactions_path}")
+    files_ok = True
+    if not os.path.exists(problems_path) or not os.path.exists(interactions_path):
+        print("\n[Checking/Downloading Dataset Files]")
+        files_ok = ensure_dataset_files(Config.DATA_DIR, Config.GDRIVE_FILES)
+        
+        # Re-check paths after download
+        if not os.path.exists(problems_path):
+            print(f"\n[FAIL] Problem file not found: {problems_path}")
+            files_ok = False
+        if not os.path.exists(interactions_path):
+            print(f"\n[FAIL] Interactions file not found: {interactions_path}")
+            files_ok = False
+    
+    if not files_ok:
+        print("\nCould not obtain dataset files. Please check your network connection or download manually.")
         sys.exit(1)
     
     # Load data

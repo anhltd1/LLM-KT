@@ -384,7 +384,7 @@ class Config:
         # Update file paths to include preset name
         cls.AKT_CHECKPOINT_DIR = f"checkpoints/akt/{preset_name}"
         cls.LLM_CHECKPOINT_DIR = f"checkpoints/llm/{preset_name}"
-        cls.AKT_BEST_MODEL = f"checkpoints/akt/{preset_name}/best_akt_model.ckpt"
+        cls.AKT_BEST_MODEL = f"checkpoints/akt/{preset_name}/best_akt_model.pt"  # Changed to .pt for consistency
         cls.LLM_BEST_MODEL = f"checkpoints/llm/{preset_name}/best_llm_model.pth"
         cls.TRAIN_EMBEDDINGS = f"embeddings/{preset_name}/student_embeddings_train.npy"
         cls.VAL_EMBEDDINGS = f"embeddings/{preset_name}/student_embeddings_val.npy"

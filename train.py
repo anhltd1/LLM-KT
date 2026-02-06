@@ -468,16 +468,24 @@ def main():
         mappings_dir = os.path.join(os.path.dirname(output_dir), "mappings")
         os.makedirs(mappings_dir, exist_ok=True)
         
-        if not os.path.exists(problems_path):
-            print(f"\n✗ Problem file not found: {problems_path}")
-            print("  Please run the notebook to download data from Google Drive first.")
-            print("  Or use --processed-dir to load pre-processed data.")
-            sys.exit(1)
+        # Check files exist, download from Google Drive if needed
+        from utils.gdrive_downloader import ensure_dataset_files
         
-        if not os.path.exists(interactions_path):
-            print(f"\n✗ Interactions file not found: {interactions_path}")
-            print("  Please run the notebook to download data from Google Drive first.")
-            print("  Or use --processed-dir to load pre-processed data.")
+        files_ok = True
+        if not os.path.exists(problems_path) or not os.path.exists(interactions_path):
+            print("\n[Checking/Downloading Dataset Files]")
+            files_ok = ensure_dataset_files(Config.DATA_DIR, Config.GDRIVE_FILES)
+            
+            if not os.path.exists(problems_path):
+                print(f"\n[FAIL] Problem file not found: {problems_path}")
+                files_ok = False
+            if not os.path.exists(interactions_path):
+                print(f"\n[FAIL] Interactions file not found: {interactions_path}")
+                files_ok = False
+        
+        if not files_ok:
+            print("\nCould not obtain dataset files.")
+            print("  Use --processed-dir to load pre-processed data, or check network connection.")
             sys.exit(1)
         
         train_loader, val_loader, test_loader, metadata = create_data_loaders(

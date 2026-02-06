@@ -59,49 +59,41 @@ class ProxyManager:
         
         Logic:
         1. Capture current proxy env vars
-        2. Test connectivity WITH proxies
-        3. If fail -> Test connectivity WITHOUT proxies
-        4. If fail -> Warn user
-        5. Set os.environ to the working configuration
+        2. If proxies exist: Test WITH proxies -> If fail, Test WITHOUT -> If good, Unset env
+        3. If no proxies: Test direct -> If fail, Warn
         """
         # 1. Get current settings
         initial_proxies = cls.get_proxy_settings()
         
-        # If no proxies set, just test direct connection
-        if not initial_proxies:
-            if verbose:
-                print("No proxy settings found in environment. Testing direct connection...")
-            if cls.test_connection(None):
-                if verbose: print(f"✓ Direct connection to {cls.CHECK_URL} successful.")
-                return
-            else:
-                print(f"⚠️ Warning: Direct connection to {cls.CHECK_URL} failed.")
-                return
-
-        # 2. Test WITH proxies
-        if verbose:
-            print(f"Testing connectivity with configured proxy...")
-        
-        if cls.test_connection(initial_proxies):
-            if verbose:
-                print(f"✓ Proxy connection successful.")
-            # Ensure they remain set (they are already in os.environ)
-            return
-        
-        # 3. If proxy failed, test WITHOUT proxies
-        if verbose:
-            print(f"✗ Proxy connection failed. Attempting direct connection...")
-        
-        if cls.test_connection(None):
-            if verbose:
-                print(f"✓ Direct connection successful. Unsetting proxy environment variables.")
-            
-            # Unset variables in os.environ
-            for key in initial_proxies:
+        # Helper to clear all proxy vars
+        def clear_proxy_env():
+            keys_to_clear = [
+                'HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy',
+                'ALL_PROXY', 'all_proxy', 'NO_PROXY', 'no_proxy'
+            ]
+            for key in keys_to_clear:
                 if key in os.environ:
                     del os.environ[key]
-            
-            # Also clear from python's request session if needed, but os.environ is main one
+        
+        if not initial_proxies:
+            # Already direct
+            if verbose: print("No proxy settings found. Using direct connection.")
+            return
+
+        # 2. Proxies are set, test them
+        if verbose: print(f"Checking configured proxy...")
+        if cls.test_connection(initial_proxies):
+            if verbose: print(f"✓ Proxy connection successful.")
+            return
+        
+        # 3. Proxy failed, try direct
+        if verbose: print(f"✗ Proxy connection failed. Attempting direct connection...")
+        if cls.test_connection(None):
+            if verbose: print(f"✓ Direct connection successful. Clearing proxy settings.")
+            clear_proxy_env()
         else:
-            print(f"⚠️ Warning: Both proxy and direct connections to {cls.CHECK_URL} failed.")
-            print("  Retaining original proxy settings.")
+            print(f"⚠️ Warning: Connection failed both with proxy and direct.")
+            # We default to clearing them if they are broken, or keeping them?
+            # Safest to keep them if both fail (maybe network down), but user asked to fix "messy proxy".
+            # If direct failed too, network might be down.
+            pass

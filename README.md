@@ -1,146 +1,265 @@
-# LLM-KT: Knowledge Tracing with Large Language Models
+# LLM-KT: Knowledge Tracing with LLMs
 
-A Knowledge Tracing model that combines dual encoders (Context + Sequence) with fine-tuned LLMs to predict student performance on learning tasks.
+Predict student performance using dual encoders + fine-tuned LLMs on the MOOCRadar dataset.
 
-## Architecture
-
-```mermaid
-graph LR
-    subgraph "Input"
-        A[Problem Text] --> B[Context Encoder]
-        C[Interaction History] --> D[Sequence Encoder]
-    end
-    subgraph "Hybrid Encoder"
-        B --> E[Combine]
-        D --> E
-    end
-    E --> F[Question/Concept Embeddings]
-    F --> G["LLM (LoRA Fine-tuned)"]
-    G --> H[Correct/Incorrect Prediction]
-```
-
-**Key Components:**
-- **Context Encoder**: Multilingual BERT-base (`intfloat/multilingual-e5-base`) for encoding problem text and concepts
-- **Sequence Encoder**: Transformer encoder for capturing temporal patterns in student history
-- **LLM Integration**: Fine-tuned LLMs (Phi-3, Qwen, Llama2) with LoRA adapters
-
-## Dataset
-
-Uses the **MOOCRadar** dataset containing:
-- `problem.json`: ~9.3K problems with Chinese text content, options, and concepts
-- `student-problem-coarse-flattened.json`: ~9.9M student interaction logs
+---
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Setup Environment
 
 ```bash
-pip install torch transformers peft tqdm numpy scikit-learn
+# Clone the repository
+git clone <your-repo-url>
+cd LLM-KT
+
+# Create virtual environment
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
+
+# Install dependencies
+pip install torch transformers peft tqdm numpy scikit-learn gdown python-dotenv requests
 ```
 
-### 2. Prepare Data
+### 2. Configure Environment Variables
+
+Create a `.env` file in the project root:
 
 ```bash
-python prepare_data.py \
-    --problems-path dataset/MOOCRadar/problem.json \
-    --interactions-path dataset/MOOCRadar/student-problem-coarse-flattened.json \
-    --output-dir processed/ \
-    --max-seq-len 200 \
-    --seed 42
+# WandB (optional - for experiment tracking)
+WANDB_API_KEY=your_wandb_key_here
+
+# Hugging Face (for downloading models)
+HF_TOKEN=your_hf_token_here
+
+# Proxy (optional - if behind corporate firewall)
+HTTP_PROXY=http://your.proxy:port
+HTTPS_PROXY=http://your.proxy:port
 ```
 
-For quick testing with limited data:
+### 3. Prepare Data
+
+The dataset will be **automatically downloaded** from Google Drive if not present:
+
 ```bash
+# Quick test with small dataset
 python prepare_data.py --preset small --output-dir processed/small
+
+# Full dataset
+python prepare_data.py --output-dir processed/full
 ```
 
-### 3. Train Model
+**What this does:**
+- Downloads `problem.json` and `student-problem-coarse-flattened.json` from Google Drive (if missing)
+- Processes ~9.3K problems and ~9.9M student interactions
+- Creates train/val/test splits
+- Saves to `processed/` directory
+
+### 4. Training (2-Stage Pipeline)
+
+We split training into two independent steps for better control:
+
+**Step 1: Train Encoder (AKT)**
+Trains the Context + Sequence encoder to predict student performance (without LLM).
 
 ```bash
-# Using pre-processed data (recommended)
-python train.py --preset small --processed-dir processed/small --epochs 5
+# Train on small preset
+python train_encoder.py --preset small --processed-dir processed/small --epochs 10
 
-# Or directly from raw JSON
-python train.py --preset small --epochs 5
+# Output: checkpoints/akt/small/best_akt_model.pt
 ```
 
-### 4. Test Model
+**Step 2: Fine-tune LLM**
+Uses the pre-trained encoder to fine-tune the LLM for the final task.
 
 ```bash
-python test.py --checkpoint checkpoints/best_model
+# Fine-tune using the trained encoder
+python finetune_llm.py \
+    --preset small \
+    --processed-dir processed/small \
+    --encoder-path checkpoints/akt/small/best_akt_model.pt \
+    --epochs 3
 ```
 
-## Configuration Presets
+**Why this approach?**
+1. **Efficiency**: Train the encoder quickly (lightweight) before the expensive LLM fine-tuning.
+2. **Modularity**: Reuse the same good encoder for different LLMs (Phi-3, Llama 2, etc.).
 
-| Preset | Description | Use Case |
-|--------|-------------|----------|
-| `small` | Minimal config, fast training | Testing & debugging |
-| `standard` | Balanced settings | General use |
-| `phi3` | Microsoft Phi-3 model | Production |
-| `qwen` | Qwen model | Production |
-| `llama2` | Llama 2 model | Production |
+### 5. Monitor Training
 
+If you enabled WandB in `.env`:
 ```bash
-# Use a preset
-python train.py --preset phi3
-
-# Override specific settings
-python train.py --preset phi3 --batch-size 4 --lr 1e-4
+python finetune_llm.py --preset small --processed-dir processed/small --wandb
 ```
+
+---
 
 ## Project Structure
 
 ```
 LLM-KT/
-├── prepare_data.py      # Data preparation CLI
-├── train.py             # Training CLI
-├── test.py              # Testing script
-├── config.py            # Configuration presets
+├── prepare_data.py      # Step 1: Data Prep
+├── train_encoder.py     # Step 2: Encoder Training (AKT)
+├── finetune_llm.py      # Step 3: LLM Fine-tuning
+├── test.py              # Evaluation script
+├── config.py            # Configuration
+├── .env                 # API Keys
+│
 ├── models/
-│   ├── encoders.py      # Context & Sequence encoders
-│   └── kt_llm.py        # LLM integration
-├── utils/
-│   ├── data_loader.py   # Dataset classes
-│   └── concept_mapping.py
-└── dataset/
-    └── MOOCRadar/       # Raw data files
+│   ├── encoders.py      # Context & Sequence Encoders
+│   ├── embedding_model.py # KTEmbeddingModel Wrapper
+│   └── kt_llm.py        # LLM Integration
+│
+├── checkpoints/
+│   ├── akt/             # Encoder checkpoints
+│   └── llm/             # LLM checkpoints
 ```
 
-## CLI Reference
+---
 
-### prepare_data.py
+## Common Commands
+
+### Data Preparation
 
 ```bash
-python prepare_data.py --help
+# Small dataset for testing
+python prepare_data.py --preset small --output-dir processed/small
+
+# Custom configuration
+python prepare_data.py \
+    --problems-path dataset/MOOCRadar/problem.json \
+    --interactions-path dataset/MOOCRadar/student-problem-coarse-flattened.json \
+    --output-dir processed/custom \
+    --train-ratio 0.8 \
+    --val-ratio 0.1 \
+    --max-seq-len 200 \
+    --max-students 50
 ```
 
-Key arguments:
-- `--problems-path`: Path to problem.json
-- `--interactions-path`: Path to student interactions
-- `--output-dir`: Output directory for processed data
-- `--train-ratio` / `--val-ratio`: Dataset split ratios
-- `--max-seq-len`: Maximum sequence length
-- `--preset`: Use preset configuration
-
-### train.py
+### Training
 
 ```bash
-python train.py --help
+# Basic training
+python train.py --preset small --processed-dir processed/small --epochs 5
+
+# With custom hyperparameters
+python train.py --preset phi3 \
+    --processed-dir processed/full \
+    --epochs 10 \
+    --batch-size 4 \
+    --lr 5e-5 \
+    --wandb
+
+# Resume from checkpoint
+python train.py --preset small \
+    --processed-dir processed/small \
+    --resume checkpoints/llm/small/epoch_3
 ```
 
-Key arguments:
-- `--preset`: Model preset to use
-- `--processed-dir`: Pre-processed data directory
-- `--epochs`: Number of training epochs
-- `--batch-size`: Training batch size
-- `--lr`: Learning rate
-- `--wandb`: Enable Weights & Biases logging
+---
 
-## Notebook Demo
+## Troubleshooting
 
-For demonstrations and exploration, see `main.ipynb`. The notebook provides:
-- Interactive data exploration
-- Step-by-step model building
-- Visualization of results
+### Network Issues
 
-> **Note**: CLI (`prepare_data.py` + `train.py`) is recommended for production training.
+The project automatically handles proxy configuration:
+1. Reads proxy from `.env`
+2. Tests connectivity with proxy
+3. Falls back to direct connection if proxy fails
+
+Test your connection:
+```bash
+python test_proxy.py
+```
+
+### Missing Dataset Files
+
+Dataset files are **automatically downloaded** from Google Drive when you run:
+- `python prepare_data.py`
+- `python train.py` (without `--processed-dir`)
+
+If download fails:
+1. Check your network connection
+2. Verify proxy settings in `.env`
+3. Or download manually from Google Drive and place in `dataset/MOOCRadar/`
+
+### CUDA Out of Memory
+
+```bash
+# Reduce batch size
+python train.py --preset small --batch-size 2
+
+# Use gradient accumulation
+python train.py --preset small --batch-size 2 --grad-accum 4
+
+# Use smaller model
+python train.py --preset small  # Uses TinyLlama
+```
+
+---
+
+## Architecture
+
+```
+┌─────────────────────┐
+│  Problem Text       │──┐
+│  (Chinese)          │  │
+└─────────────────────┘  │
+                         ├──► Context Encoder
+┌─────────────────────┐  │    (multilingual-e5-base)
+│  Concept Names      │──┘
+└─────────────────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+┌─────────────────────┐  │                      │
+│  Interaction        │──┤   Hybrid Encoder     │
+│  History            │  │   (Combine Context   │
+└─────────────────────┘  │    + Sequence)       │
+                         └──────────────────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   LLM (LoRA)         │
+                         │   Phi-3 / Qwen /     │
+                         │   Llama2             │
+                         └──────────────────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   Prediction         │
+                         │   Correct/Incorrect  │
+                         └──────────────────────┘
+```
+
+---
+
+## Dataset
+
+**MOOCRadar** - Chinese MOOC learning data:
+- **9,300+** problems with Chinese text
+- **9.9M** student interaction logs
+- **Multiple concepts** per problem
+- **Temporal sequence** of student attempts
+
+---
+
+## Citation
+
+If you use this code, please cite:
+
+```bibtex
+@software{llm_kt_2024,
+  title={LLM-KT: Knowledge Tracing with Large Language Models},
+  author={Your Name},
+  year={2024},
+  url={https://github.com/yourusername/LLM-KT}
+}
+```
+
+---
+
+## License
+
+MIT License - See LICENSE file for details
