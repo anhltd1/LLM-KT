@@ -66,6 +66,11 @@ MODEL_PRESETS = {
         # Soft prompts
         "NUM_SOFT_TOKENS": 4,
         "MAX_PROMPT_LENGTH": 256,
+        
+        # Dual Encoder settings
+        "CONTEXT_MODEL": "intfloat/multilingual-e5-base",
+        "NUM_SEQ_LAYERS": 2,
+        "COMBINE_METHOD": "add",  # "add", "gate", "concat"
     },
     
     # -------------------------------------------------------------------------
@@ -104,6 +109,11 @@ MODEL_PRESETS = {
         # Soft prompts
         "NUM_SOFT_TOKENS": 8,
         "MAX_PROMPT_LENGTH": 512,
+        
+        # Dual Encoder settings
+        "CONTEXT_MODEL": "intfloat/multilingual-e5-base",
+        "NUM_SEQ_LAYERS": 3,
+        "COMBINE_METHOD": "add",
     },
     
     # -------------------------------------------------------------------------
@@ -142,15 +152,20 @@ MODEL_PRESETS = {
         # Soft prompts
         "NUM_SOFT_TOKENS": 8,
         "MAX_PROMPT_LENGTH": 512,
+        
+        # Dual Encoder settings
+        "CONTEXT_MODEL": "intfloat/multilingual-e5-base",
+        "NUM_SEQ_LAYERS": 4,
+        "COMBINE_METHOD": "add",
     },
     
     # -------------------------------------------------------------------------
     # QWEN PRESET - Using Qwen2-1.5B
-    # Good multilingual support
+    # Good multilingual support (excellent for Chinese)
     # -------------------------------------------------------------------------
     "qwen": {
         "name": "Qwen2-1.5B",
-        "description": "Alibaba Qwen2 - good for multilingual tasks",
+        "description": "Alibaba Qwen2 - excellent for Chinese content",
         
         # Data
         "MAX_INTERACTIONS": 10000,
@@ -180,6 +195,11 @@ MODEL_PRESETS = {
         # Soft prompts
         "NUM_SOFT_TOKENS": 8,
         "MAX_PROMPT_LENGTH": 512,
+        
+        # Dual Encoder settings (Qwen's tokenizer handles Chinese well)
+        "CONTEXT_MODEL": "intfloat/multilingual-e5-base",
+        "NUM_SEQ_LAYERS": 4,
+        "COMBINE_METHOD": "add",
     },
     
     # -------------------------------------------------------------------------
@@ -217,6 +237,11 @@ MODEL_PRESETS = {
         # Soft prompts
         "NUM_SOFT_TOKENS": 8,
         "MAX_PROMPT_LENGTH": 512,
+        
+        # Dual Encoder settings
+        "CONTEXT_MODEL": "intfloat/multilingual-e5-base",
+        "NUM_SEQ_LAYERS": 4,
+        "COMBINE_METHOD": "add",
     },
 }
 
@@ -266,6 +291,18 @@ class Config:
     LORA_ALPHA = 32
     LORA_DROPOUT = 0.1
     LORA_TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    
+    # ==================== DUAL ENCODER CONFIGURATION ====================
+    # Context Encoder (for text embeddings - supports Chinese)
+    CONTEXT_MODEL = "intfloat/multilingual-e5-base"  # Multilingual model for Chinese
+    FREEZE_CONTEXT = True  # Freeze context encoder weights
+    
+    # Sequence Encoder (for learning history)
+    NUM_SEQ_LAYERS = 2  # Number of transformer layers
+    COMBINE_METHOD = "add"  # How to combine context + sequence: "add", "gate", "concat"
+    
+    # Mapping directories
+    MAPPINGS_DIR = "mappings"
     
     # ==================== GOOGLE DRIVE FILE IDS ====================
     GDRIVE_FILES = {
@@ -341,11 +378,12 @@ class Config:
         cls.CHECKPOINT_DIR = f"checkpoints/{preset_name}"
         cls.EMBEDDING_DIR = f"embeddings/{preset_name}"
         cls.OUTPUT_DIR = f"outputs/{preset_name}"
+        cls.MAPPINGS_DIR = f"mappings/{preset_name}"  # Update mappings dir for preset
         
-        print(f"✓ Applied preset: {preset['name']}")
+        print(f"[OK] Applied preset: {preset['name']}")
         print(f"  {preset['description']}")
         print(f"  LLM: {cls.LLM_MODEL_NAME}")
-        print(f"  Embedding dim: {cls.EMBED_DIM} → LLM hidden: {cls.LLM_HIDDEN_SIZE}")
+        print(f"  Embedding dim: {cls.EMBED_DIM} -> LLM hidden: {cls.LLM_HIDDEN_SIZE}")
     
     @classmethod
     def list_presets(cls):
@@ -354,8 +392,8 @@ class Config:
         print("AVAILABLE MODEL PRESETS")
         print("=" * 70)
         for key, preset in MODEL_PRESETS.items():
-            active = " ← ACTIVE" if key == cls.ACTIVE_PRESET else ""
-            print(f"\n📦 {key}{active}")
+            active = " <- ACTIVE" if key == cls.ACTIVE_PRESET else ""
+            print(f"\n[*] {key}{active}")
             print(f"   Name: {preset['name']}")
             print(f"   Description: {preset['description']}")
             print(f"   LLM: {preset['LLM_MODEL_NAME']}")
@@ -387,17 +425,17 @@ class Config:
         print("TRAINING CONFIGURATION")
         print("=" * 70)
         
-        print(f"\n🎯 ACTIVE PRESET: {cls.ACTIVE_PRESET.upper()}")
+        print(f"\n[ACTIVE PRESET: {cls.ACTIVE_PRESET.upper()}]")
         if preset_info:
             print(f"   {preset_info.get('name', '')} - {preset_info.get('description', '')}")
         
-        print("\n📊 DATA:")
+        print("\n[DATA]:")
         print(f"  Max Interactions: {cls.MAX_INTERACTIONS:,}")
         print(f"  Max Users: {cls.MAX_USERS}")
         print(f"  Max Sequence Length: {cls.MAX_SEQ_LEN}")
         print(f"  Test Split: {cls.TEST_SIZE*100:.0f}%")
         
-        print("\n🧠 AKT MODEL:")
+        print("\n[AKT MODEL]:")
         print(f"  Embedding Dim: {cls.EMBED_DIM}")
         print(f"  Attention Heads: {cls.NUM_HEADS}")
         print(f"  Transformer Layers: {cls.NUM_LAYERS}")
@@ -406,7 +444,7 @@ class Config:
         print(f"  Learning Rate: {cls.AKT_LR}")
         print(f"  Dropout: {cls.AKT_DROPOUT}")
         
-        print("\n🤖 LLM FINE-TUNING:")
+        print("\n[LLM FINE-TUNING]:")
         print(f"  Model: {cls.LLM_MODEL_NAME}")
         print(f"  LLM Hidden Size: {cls.LLM_HIDDEN_SIZE}")
         print(f"  Soft Tokens: {cls.NUM_SOFT_TOKENS}")
@@ -414,30 +452,30 @@ class Config:
         print(f"  Epochs: {cls.LLM_EPOCHS}")
         print(f"  Learning Rate: {cls.LLM_LR}")
         
-        print("\n🔗 EMBEDDING ADAPTER:")
+        print("\n[EMBEDDING ADAPTER]:")
         adapter_cfg = cls.get_embedding_adapter_config()
-        print(f"  AKT → LLM: {adapter_cfg['akt_embed_dim']} → {adapter_cfg['llm_hidden_size']}")
+        print(f"  AKT -> LLM: {adapter_cfg['akt_embed_dim']} -> {adapter_cfg['llm_hidden_size']}")
         print(f"  Adapter Hidden: {adapter_cfg['adapter_hidden_dim']}")
         print(f"  Soft Tokens: {adapter_cfg['num_soft_tokens']}")
         
-        print("\n🔧 LORA:")
+        print("\n[LORA]:")
         print(f"  Rank: {cls.LORA_R}")
         print(f"  Alpha: {cls.LORA_ALPHA}")
         print(f"  Dropout: {cls.LORA_DROPOUT}")
         
-        print("\n⚙️  OPTIMIZATION:")
-        print(f"  GPU: {'✓ Enabled' if cls.USE_GPU else '✗ Disabled'}")
-        print(f"  Mixed Precision: {'✓ Enabled' if cls.MIXED_PRECISION else '✗ Disabled'}")
+        print("\n[OPTIMIZATION]:")
+        print(f"  GPU: {'Yes' if cls.USE_GPU else 'No'}")
+        print(f"  Mixed Precision: {'Yes' if cls.MIXED_PRECISION else 'No'}")
         print(f"  Gradient Accumulation: {cls.GRADIENT_ACCUMULATION} steps")
         
-        print("\n📊 EXPERIMENT TRACKING:")
-        print(f"  Wandb: {'✓ Enabled' if cls.USE_WANDB else '✗ Disabled'}")
+        print("\n[EXPERIMENT TRACKING]:")
+        print(f"  Wandb: {'Yes' if cls.USE_WANDB else 'No'}")
         if cls.USE_WANDB:
             print(f"  Entity: {cls.WANDB_ENTITY}")
             print(f"  Project: {cls.WANDB_PROJECT}")
-            print(f"  Save Model: {'✓ Yes' if cls.WANDB_SAVE_MODEL else '✗ No'}")
+            print(f"  Save Model: {'Yes' if cls.WANDB_SAVE_MODEL else 'No'}")
         
-        print("\n📁 OUTPUT PATHS:")
+        print("\n[OUTPUT PATHS]:")
         print(f"  AKT Checkpoints: {cls.AKT_CHECKPOINT_DIR}")
         print(f"  LLM Checkpoints: {cls.LLM_CHECKPOINT_DIR}")
         print(f"  Embeddings: embeddings/{cls.ACTIVE_PRESET}/")
