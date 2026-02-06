@@ -99,13 +99,15 @@ class ContextEncoder(nn.Module):
             Text embeddings of shape [batch_size, output_dim]
         """
         # Tokenize
+        # Use simple method to get device from encoder parameters
+        device = next(self.encoder.parameters()).device
         inputs = self.tokenizer(
             texts,
             padding=True,
             truncation=True,
             max_length=max_length,
             return_tensors="pt"
-        ).to(self.device)
+        ).to(device)
         
         # Encode
         with torch.no_grad() if not self.training else torch.enable_grad():
