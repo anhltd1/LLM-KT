@@ -371,6 +371,10 @@ class KnowledgeTracingLLM(nn.Module):
         mask = batch['mask'].to(device)
         target_response = batch['target_response'].to(device)
         
+        # Also move target tensors to device
+        target_question_id = batch['target_question_id'].to(device)
+        target_concept_ids = batch['target_concept_ids'].to(device)
+        
         batch_size = question_ids.size(0)
         
         # Compute embeddings for each sample
@@ -378,10 +382,10 @@ class KnowledgeTracingLLM(nn.Module):
         all_prompts = []
         
         for i in range(batch_size):
-            # Get target info
-            target_qid = batch['target_question_id'][i].item()
+            # Get target info (use already moved tensors)
+            target_qid = target_question_id[i].item()
             target_q_text = batch['target_question_text'][i]
-            target_c_ids = batch['target_concept_ids'][i]
+            target_c_ids = target_concept_ids[i]
             target_c_texts = batch['target_concept_texts'][i]
             
             # Use first concept
