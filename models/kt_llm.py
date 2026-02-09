@@ -493,7 +493,7 @@ class KnowledgeTracingLLM(nn.Module):
             Tuple of (prediction, probability)
         """
         self.eval()
-        device = next(self.parameters()).device
+        device = self.device
         
         with torch.no_grad():
             # Get embeddings
