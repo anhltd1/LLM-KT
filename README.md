@@ -102,9 +102,13 @@ LLM-KT/
 ├── prepare_data.py      # Step 1: Data Prep
 ├── train_encoder.py     # Step 2: Encoder Training (AKT)
 ├── finetune_llm.py      # Step 3: LLM Fine-tuning
+├── predict.py           # Manual Inference (CLI)
 ├── test.py              # Evaluation script
 ├── config.py            # Configuration
 ├── .env                 # API Keys
+│
+├── examples/            # Sample inputs
+│   └── sample.json
 │
 ├── models/
 │   ├── encoders.py      # Context & Sequence Encoders
@@ -114,6 +118,62 @@ LLM-KT/
 ├── checkpoints/
 │   ├── akt/             # Encoder checkpoints
 │   └── llm/             # LLM checkpoints
+```
+
+### 6. Testing & Inference
+
+After training, you can test the model in two ways:
+
+**A. Manual Prediction (Specific Cases)**
+Use `predict.py` to run inference on custom samples defined in a JSON file (e.g., `examples/sample.json`).
+
+```bash
+# Test with small preset
+python predict.py \
+    --checkpoint checkpoints/llm/small/best_model \
+    --preset small \
+    --processed-dir processed/small \
+    --input examples/sample.json
+
+# Test with other presets (e.g., phi3)
+python predict.py \
+    --checkpoint checkpoints/llm/phi3/best_model \
+    --preset phi3 \
+    --processed-dir processed/full \
+    --input examples/custom_sample.json
+```
+
+**Input Format (`examples/sample.json`)**:
+```json
+[
+  {
+    "user_id": "student_001",
+    "history": [
+      {
+        "problem_id": "Pm_123",
+        "question_text": "Math problem...",
+        "concepts": ["Algebra"],
+        "correct": 1
+      }
+    ],
+    "target": {
+      "problem_id": "Pm_124", 
+      "question_text": "Next problem...",
+      "concepts": ["Algebra"],
+      "correct": 1
+    }
+  }
+]
+```
+
+**B. Full Dataset Evaluation**
+Use `test.py` to evaluate metrics (AUC, Accuracy) on the entire test split.
+
+```bash
+python test.py \
+    --checkpoint checkpoints/llm/small/best_model \
+    --preset small \
+    --split test
 ```
 
 ---
