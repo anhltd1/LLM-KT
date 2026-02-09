@@ -1,0 +1,35 @@
+[
+  {
+    "user_id": "test_user_001",
+    "history": [
+      {
+        "problem_id": "Pm_2046133",
+        "question_text": "“经济发展有其内在的逻辑，一旦违背其内在逻辑，经济就要出大问题。...",
+        "concepts": ["经济发展逻辑", "逻辑学"],
+        "correct": 1
+      },
+      {
+        "problem_id": "Pm_2046134",
+        "question_text": "“逻辑”一词其语源最初来自：",
+        "concepts": ["希腊语", "逻辑"],
+        "correct": 0
+      }
+    ],
+    "target": {
+      "problem_id": "Pm_2046135",
+      "question_text": "逻辑学对推理的研究在于：",
+      "concepts": ["逻辑", "推理"],
+      "correct": 1
+    }
+  },
+  {
+    "user_id": "test_user_002",
+    "history": [],
+    "target": {
+      "problem_id": "Pm_2046153",
+      "question_text": "命题可用语句表达，但语句不一定表达命题。以下哪种语句通常不能直接表达命题：",
+      "concepts": ["命题", "疑问句", "命题形式"],
+      "correct": 0
+    }
+  }
+]
