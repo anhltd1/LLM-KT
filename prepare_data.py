@@ -26,7 +26,7 @@ from tqdm import tqdm
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import Config
+from config import Config, MODEL_PRESETS
 from utils import (
     ProblemDatabase,
     StudentInteractions,
@@ -118,7 +118,7 @@ def parse_args():
         "--preset",
         type=str,
         default=None,
-        choices=["small", "standard", "phi3", "qwen", "llama2"],
+        choices=list(MODEL_PRESETS.keys()),
         help="Use preset configuration for data limits"
     )
     

@@ -259,6 +259,48 @@ MODEL_PRESETS = {
         "NUM_SEQ_LAYERS": 4,
         "COMBINE_METHOD": "add",
     },
+
+    # -------------------------------------------------------------------------
+    # PERCENT10 PRESET - 10% of Full Dataset
+    # -------------------------------------------------------------------------
+    "percent10": {
+        "name": "10% Dataset",
+        "description": "Uses 10% of the full dataset with TinyLlama",
+        
+        # Data (10% of ~100k users estimation)
+        "MAX_INTERACTIONS": 1000,
+        "MAX_USERS": 100,
+        "MAX_SEQ_LEN": 100,
+        
+        # AKT Model (TinyLlama config)
+        "EMBED_DIM": 2048,
+        "NUM_HEADS": 8,
+        "NUM_LAYERS": 4,
+        "AKT_BATCH_SIZE": 64,
+        "AKT_EPOCHS": 10,
+        "AKT_LR": 5e-5,
+        
+        # LLM
+        "LLM_MODEL_NAME": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        "LLM_HIDDEN_SIZE": 2048,
+        "LLM_BATCH_SIZE": 4,  # Increased batch size for smaller model
+        "LLM_EPOCHS": 3,
+        "LLM_LR": 2e-4,
+        
+        # LoRA
+        "LORA_R": 16,
+        "LORA_ALPHA": 32,
+        "LORA_DROPOUT": 0.05,
+        
+        # Soft prompts
+        "NUM_SOFT_TOKENS": 8,
+        "MAX_PROMPT_LENGTH": 512,
+        
+        # Dual Encoder settings
+        "CONTEXT_MODEL": "intfloat/multilingual-e5-base",
+        "NUM_SEQ_LAYERS": 4,
+        "COMBINE_METHOD": "add",
+    },
 }
 
 

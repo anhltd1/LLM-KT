@@ -24,7 +24,7 @@ import wandb
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import Config
+from config import Config, MODEL_PRESETS
 from models.embedding_model import KTEmbeddingModel
 from models.kt_llm import KnowledgeTracingLLM
 from utils import create_data_loaders_from_processed
@@ -35,7 +35,7 @@ def parse_args():
     # Data arguments
     parser.add_argument("--processed-dir", type=str, default=None, help="Path to processed data")
     parser.add_argument("--encoder-path", type=str, default=None, help="Path to pre-trained encoder checkpoint")
-    parser.add_argument("--preset", type=str, default="small", choices=["small", "standard", "phi3", "qwen", "llama2"])
+    parser.add_argument("--preset", type=str, default="small", choices=list(MODEL_PRESETS.keys()))
     
     # Training arguments
     parser.add_argument("--epochs", type=int, default=None, help="Training epochs")

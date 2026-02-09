@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import Config
+from config import Config, MODEL_PRESETS
 from models.embedding_model import KTEmbeddingModel
 from utils import create_data_loaders_from_processed, create_data_loaders
 
@@ -81,7 +81,7 @@ def parse_args():
     
     # Data arguments
     parser.add_argument("--processed-dir", type=str, default=None, help="Path to pre-processed data")
-    parser.add_argument("--preset", type=str, default="small", choices=["small", "standard", "phi3", "qwen", "llama2"])
+    parser.add_argument("--preset", type=str, default="small", choices=list(MODEL_PRESETS.keys()))
     
     # Model arguments
     parser.add_argument("--embed-dim", type=int, default=None, help="Embedding dimension")
