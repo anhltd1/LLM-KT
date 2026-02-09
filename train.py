@@ -634,7 +634,13 @@ def main():
     print("=" * 50)
     
     # Load best model
-    model.load(os.path.join(output_dir, "best_model"))
+    # Load best model
+    best_model_path = os.path.join(output_dir, "best_model")
+    if os.path.exists(os.path.join(best_model_path, "embedding_model.pt")):
+        print(f"Loading best model from {best_model_path}")
+        model.load(best_model_path)
+    else:
+        print("Warning: Best model checkpoint not found (validation metric never improved). Using current model state.")
     
     test_metrics = validate(
         model=model,
