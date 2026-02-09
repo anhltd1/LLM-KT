@@ -120,101 +120,107 @@ LLM-KT/
 │   └── llm/             # LLM checkpoints
 ```
 
-### 6. Testing & Inference
+### 6. Complete Usage Guide
 
-After training, you can test the model in two ways:
+This section provides dedicated workflows for different use cases and hardware capabilities.
 
-**A. Manual Prediction (Specific Cases)**
-Use `predict.py` to run inference on custom samples defined in a JSON file (e.g., `examples/sample.json`).
+#### Available Presets
+
+| Preset | Scenario | Model | Data Size | Recommended VRAM |
+|--------|----------|-------|-----------|------------------|
+| `small` | Debugging | TinyLlama-1.1B | 5 Users | < 4GB |
+| `percent10` | Experimentation | TinyLlama-1.1B | ~10k Users | 8GB |
+| `standard` | Production | Phi-2 (2.7B) | ~100 Users | 12GB |
+| `phi3` | High Performance | Phi-3-Mini (3.8B) | ~200 Users | 16GB |
+| `qwen` | Chinese Optimized | Qwen2-1.5B | ~200 Users | 12GB |
+
+---
+
+#### Scenario 1: Quick Debugging (`small`)
+
+Use this to verify your setup is correct. Runs in minutes.
 
 ```bash
-# Test with small preset
-python predict.py \
-    --checkpoint checkpoints/llm/small/best_model \
+# 1. Prepare Data
+python prepare_data.py --preset small --output-dir processed/small
+
+# 2. Train Encoder (AKT)
+python train_encoder.py --preset small --processed-dir processed/small --epochs 5
+
+# 3. Fine-tune LLM
+python finetune_llm.py \
     --preset small \
     --processed-dir processed/small \
-    --input examples/sample.json
+    --encoder-path checkpoints/akt/small/best_akt_model.pt \
+    --epochs 2
 
-# Test with other presets (e.g., phi3)
-python predict.py \
-    --checkpoint checkpoints/llm/phi3/best_model \
-    --preset phi3 \
-    --processed-dir processed/full \
-    --input examples/custom_sample.json
+# 4. Test
+python predict.py --preset small --checkpoint checkpoints/llm/small/best_model --input examples/sample.json
 ```
 
-**Input Format (`examples/sample.json`)**:
-```json
-[
-  {
-    "user_id": "student_001",
-    "history": [
-      {
-        "problem_id": "Pm_123",
-        "question_text": "Math problem...",
-        "concepts": ["Algebra"],
-        "correct": 1
-      }
-    ],
-    "target": {
-      "problem_id": "Pm_124", 
-      "question_text": "Next problem...",
-      "concepts": ["Algebra"],
-      "correct": 1
-    }
-  }
-]
-```
+#### Scenario 2: Balanced Experiment (`percent10`) - **Recommended**
 
-**B. Full Dataset Evaluation**
-Use `test.py` to evaluate metrics (AUC, Accuracy) on the entire test split.
+Use this for meaningful experiments on a logical subset (10%) of the data.
 
 ```bash
-python test.py \
-    --checkpoint checkpoints/llm/small/best_model \
-    --preset small \
-    --split test
+# 1. Prepare Data
+python prepare_data.py --preset percent10 --output-dir processed/percent10
+
+# 2. Train Encoder
+python train_encoder.py --preset percent10 --processed-dir processed/percent10 --epochs 10
+
+# 3. Fine-tune LLM
+python finetune_llm.py \
+    --preset percent10 \
+    --processed-dir processed/percent10 \
+    --encoder-path checkpoints/akt/percent10/best_akt_model.pt \
+    --epochs 3 --save-every 1
+```
+
+#### Scenario 3: Production Training (`standard` / `phi3`)
+
+For best results, use larger models and more data.
+
+```bash
+# 1. Prepare Data (replace 'phi3' with 'standard' or 'qwen' as needed)
+python prepare_data.py --preset phi3 --output-dir processed/phi3
+
+# 2. Train Encoder
+python train_encoder.py --preset phi3 --processed-dir processed/phi3 --epochs 20
+
+# 3. Fine-tune LLM
+python finetune_llm.py \
+    --preset phi3 \
+    --processed-dir processed/phi3 \
+    --encoder-path checkpoints/akt/phi3/best_akt_model.pt \
+    --epochs 5 --save-every 1
 ```
 
 ---
 
-## Common Commands
+#### Advanced Testing & Inference
 
-### Data Preparation
+After training any preset, you can evaluate the model.
+
+**A. Manual Prediction**
+Test with specific examples using `predict.py`.
 
 ```bash
-# Small dataset for testing
-python prepare_data.py --preset small --output-dir processed/small
-
-# Custom configuration
-python prepare_data.py \
-    --problems-path dataset/MOOCRadar/problem.json \
-    --interactions-path dataset/MOOCRadar/student-problem-coarse-flattened.json \
-    --output-dir processed/custom \
-    --train-ratio 0.8 \
-    --val-ratio 0.1 \
-    --max-seq-len 200 \
-    --max-students 50
+python predict.py \
+    --preset percent10 \
+    --checkpoint checkpoints/llm/percent10/best_model \
+    --processed-dir processed/percent10 \
+    --input examples/sample.json
 ```
 
-### Training
+**B. Full Test Set Evaluation**
+Calculate AUC and Accuracy on the held-out test set.
 
 ```bash
-# Basic training
-python train.py --preset small --processed-dir processed/small --epochs 5
-
-# With custom hyperparameters
-python train.py --preset phi3 \
-    --processed-dir processed/full \
-    --epochs 10 \
-    --batch-size 4 \
-    --lr 5e-5 \
-    --wandb
-
-# Resume from checkpoint
-python train.py --preset small \
-    --processed-dir processed/small \
-    --resume checkpoints/llm/small/epoch_3
+python test.py \
+    --preset percent10 \
+    --checkpoint checkpoints/llm/percent10/best_model \
+    --split test
 ```
 
 ---
