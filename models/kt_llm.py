@@ -256,11 +256,19 @@ class KnowledgeTracingLLM(nn.Module):
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
         # Load model
+        # Use device_map to place model on single GPU (avoid multi-GPU issues)
+        # For 4-bit quantization, we need device_map, but force single device
+        if use_4bit:
+            # Force to cuda:0 to avoid multi-GPU splitting
+            device_map = {"": 0}
+        else:
+            device_map = None
+            
         self.llm = AutoModelForCausalLM.from_pretrained(
             model_name,
             config=config,
             quantization_config=bnb_config,
-            device_map="auto" if self.device == "cuda" else None,
+            device_map=device_map,
             trust_remote_code=True,
             attn_implementation="eager"  # For compatibility
         )
