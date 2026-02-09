@@ -354,7 +354,7 @@ class KnowledgeTracingLLM(nn.Module):
         Returns:
             Dictionary with loss and logits
         """
-        device = next(self.parameters()).device
+        device = self.device
         
         # Move tensors to device
         question_ids = batch['question_ids'].to(device)
