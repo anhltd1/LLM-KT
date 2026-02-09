@@ -358,18 +358,33 @@ def validate(
     
     num_batches = len(val_loader)
     
+    if num_batches == 0:
+        return {
+            'val_loss': 0.0,
+            'val_accuracy': 0.0,
+            'val_auc': 0.0
+        }
+    
     # Calculate metrics
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
     
-    accuracy = (all_preds == all_labels).mean()
-    
-    # Calculate AUC if possible
-    try:
-        from sklearn.metrics import roc_auc_score
-        auc = roc_auc_score(all_labels, all_preds)
-    except:
-        auc = 0.0
+    if len(all_preds) > 0:
+        accuracy = (all_preds == all_labels).mean()
+        
+        # Calculate AUC if possible
+        try:
+            from sklearn.metrics import roc_auc_score
+            # AUC requires both classes to be present
+            if len(np.unique(all_labels)) > 1:
+                auc = roc_auc_score(all_labels, all_preds)
+            else:
+                auc = 0.5
+        except:
+            auc = 0.5
+    else:
+        accuracy = 0.0
+        auc = 0.5
     
     metrics = {
         'val_loss': total_loss / num_batches,
